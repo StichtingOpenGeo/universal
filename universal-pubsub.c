@@ -11,6 +11,7 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <zmq.h>
@@ -26,6 +27,10 @@ int main (int argc, char *argv[]) {
     void *context  = zmq_init (1);
     void *pubsub   = zmq_socket (context, ZMQ_PUB);
     void *receiver = zmq_socket (context, ZMQ_PULL);
+
+    /* Apply a high water mark at the PubSub */
+    uint64_t hwm   = 255;
+    zmq_setsockopt(pubsub, ZMQ_HWM, &hwm, sizeof(hwm));
 
     zmq_bind (pubsub,   argv[2]);
     zmq_bind (receiver, argv[1]);
