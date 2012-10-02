@@ -49,11 +49,8 @@ int main (int argc, char *argv[]) {
             /* Determine if more message parts are to follow */
             rc = zmq_getsockopt (receiver, ZMQ_RCVMORE, &more, &more_size);
             assert (rc == 0);
-            if (more) {
-                zmq_send (pubsub, &part, ZMQ_SNDMORE);
-            } else {
-                zmq_send (pubsub, &part, 0);
-            }
+            /* Send the message, when more is set, apply the flag, otherwise don't */
+            zmq_send (pubsub, &part, (more ? ZMQ_SNDMORE : 0));
             zmq_msg_close (&part);
         } while (more);
     }
