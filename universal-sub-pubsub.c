@@ -13,12 +13,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <zmq.h>
 
 int main (int argc, char *argv[]) {
-    if (argc != 3) {
-        printf("%s [subscriber] [pubsub]\n\nEx.\n" \
+    if (argc < 3) {
+        printf("%s [subscriber] (filter1 filter2 filterN) [pubsub]\n\nEx.\n" \
                 "%s tcp://127.0.0.1:7817 tcp://127.0.0.1:7827\n",
                 argv[0], argv[0]);
         exit(-1);
@@ -27,6 +28,13 @@ int main (int argc, char *argv[]) {
     void *context  = zmq_init (1);
     void *pubsub   = zmq_socket (context, ZMQ_PUB);
     void *subscriber = zmq_socket (context, ZMQ_SUB);
+
+    unsigned int i;
+
+    /* Apply filters to the PubSub */
+    for (i = 2; i < (argc - 1); i++) {
+        zmq_setsockopt(pubsub, ZMQ_SUBSCRIBE, argv[i], strlen(argv[i]));
+    }
 
     /* Apply a high water mark at the PubSub */
     uint64_t hwm   = 255;
