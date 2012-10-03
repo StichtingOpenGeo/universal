@@ -4,7 +4,7 @@
  * rebroadcasted to all connected clients of the serviceprovider.
  *
  * Requirements: zeromq2
- * gcc -lzmq -o universal-pubsub universal-pubsub.c
+ * gcc -lzmq -o universal-sub-pubsub universal-sub-pubsub.c
  *
  * Changes:
  *  - Initial version <stefan@opengeo.nl>
