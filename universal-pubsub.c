@@ -59,7 +59,7 @@ int main (int argc, char *argv[]) {
 	    #else
             rc = zmq_recv (receiver, &part, 0);
 	    #endif
-            assert (rc == 0);
+            assert (rc != -1);
 
             /* Determine if more message parts are to follow */
             rc = zmq_getsockopt (receiver, ZMQ_RCVMORE, &more, &more_size);
