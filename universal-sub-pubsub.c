@@ -54,7 +54,11 @@ int main (int argc, char *argv[]) {
     zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, "", 0);
 
     while (1) {
+        #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
+        int more;
+        #else
         int64_t more;
+        #endif
         size_t more_size = sizeof more;
         do {
             /* Create an empty 0MQ message to hold the message part */
