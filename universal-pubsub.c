@@ -55,7 +55,7 @@ int main (int argc, char *argv[]) {
 
             /* Block until a message is available to be received from the socket */
 	    #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
-	    rc = zmq_recvmsg (receiver, &part, 0);
+	    rc = zmq_msg_recv (&part, receiver, 0);
 	    #else
             rc = zmq_recv (receiver, &part, 0);
 	    #endif
@@ -67,7 +67,7 @@ int main (int argc, char *argv[]) {
 
             /* Send the message, when more is set, apply the flag, otherwise don't */
 	    #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
-	    zmq_sendmsg (pubsub, &part, (more ? ZMQ_SNDMORE : 0));
+	    zmq_msg_send (&part, pubsub, (more ? ZMQ_SNDMORE : 0));
 	    #else
             zmq_send (pubsub, &part, (more ? ZMQ_SNDMORE : 0));
 	    #endif
