@@ -51,7 +51,7 @@ int main (int argc, char *argv[]) {
 
             /* Block until a message is available to be received from the socket */
 	    #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
-	    rc = zmq_recvmsg (subscriber, &part, 0);
+	    rc = zmq_recvmsg (receiver, &part, 0);
 	    #else
             rc = zmq_recv (receiver, &part, 0);
 	    #endif
