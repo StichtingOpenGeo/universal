@@ -31,11 +31,15 @@ int main (int argc, char *argv[]) {
     void *pubsub   = zmq_socket (context, ZMQ_XPUB);
     void *subscriber = zmq_socket (context, ZMQ_SUB);
 
-    unsigned int i;
+    if (argc > 3) {
+        unsigned int i;
 
-    /* Apply filters to the PubSub */
-    for (i = 2; i < (argc - 1); i++) {
-        zmq_setsockopt(pubsub, ZMQ_SUBSCRIBE, argv[i], strlen(argv[i]));
+        /* Apply filters to the subscription from the remote source */
+        for (i = 2; i < (argc - 1); i++) {
+            zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, argv[i], strlen(argv[i]));
+        }
+    } else {
+        zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
     }
 
     /* Apply a high water mark at the PubSub */
@@ -45,9 +49,6 @@ int main (int argc, char *argv[]) {
 
     zmq_bind (pubsub, argv[argc - 1]);
     zmq_connect (subscriber, argv[1]);
-
-    /* Apply the subscriptions */
-    zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, "", 0);
 
     while (1) {
         int more;
