@@ -29,6 +29,14 @@ int main (int argc, char *argv[]) {
 
     void *context  = zmq_init (1);
     void *pubsub   = zmq_socket (context, ZMQ_XPUB);
+
+    /* Apply a high water mark at the PubSub */
+    uint64_t hwm   = 255;
+    zmq_setsockopt(pubsub, ZMQ_SNDHWM, &hwm, sizeof(hwm));
+    zmq_setsockopt(pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
+
+    zmq_bind (pubsub, argv[argc - 1]);
+
     void *subscriber = zmq_socket (context, ZMQ_SUB);
 
     if (argc > 3) {
@@ -42,12 +50,6 @@ int main (int argc, char *argv[]) {
         zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
     }
 
-    /* Apply a high water mark at the PubSub */
-    uint64_t hwm   = 255;
-    zmq_setsockopt(pubsub, ZMQ_SNDHWM, &hwm, sizeof(hwm));
-    zmq_setsockopt(pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
-
-    zmq_bind (pubsub, argv[argc - 1]);
     zmq_connect (subscriber, argv[1]);
 
     while (1) {
