@@ -32,8 +32,8 @@ int main (int argc, char *argv[]) {
 
     /* Apply a high water mark at the PubSub */
     uint64_t hwm   = 255;
-    zmq_setsockopt(pubsub, ZMQ_SNDHWM, &hwm, sizeof(hwm));
-    zmq_setsockopt(pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
+    zmq_setsockopt (pubsub, ZMQ_SNDHWM, &hwm, sizeof(hwm));
+    zmq_setsockopt (pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
 
     zmq_bind (pubsub, argv[argc - 1]);
 
@@ -75,4 +75,12 @@ int main (int argc, char *argv[]) {
             zmq_msg_close (&part);
         } while (more);
     }
+
+    zmq_close (subscriber);
+
+    zmq_close (pubsub);
+
+    zmq_ctx_destroy (context);
+
+    return 0;
 }
