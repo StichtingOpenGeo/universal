@@ -1,4 +1,4 @@
-PREFIX=/opt/loket
+PREFIX=/opt/universal
 CC = gcc
 CFLAGS=-Wall -O0 -ggdb -I$(PREFIX)/include
 LDFLAGS=-L$(PREFIX)/lib -Wl,-rpath,$(PREFIX)/lib -lzmq
