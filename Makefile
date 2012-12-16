@@ -10,16 +10,16 @@ zmq2: universal-pubsub universal-sub-pubsub
 zmq3: universal-sub-xpubxsub universal-xpubxsub
 
 universal-pubsub: universal-pubsub.c
-	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@
+	$(CC) -o $@ $(CFLAGS) $< $(LDFLAGS)
 
 universal-sub-pubsub: universal-sub-pubsub.c
-	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@
+	$(CC) -o $@ $(CFLAGS) $< $(LDFLAGS) 
 
 universal-xpubxsub: universal-xpubxsub.c
-	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@
+	$(CC) -o $@ $(CFLAGS) $< $(LDFLAGS) 
 
 universal-sub-xpubxsub: universal-sub-xpubxsub.c
-	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@
+	$(CC) -o $@ $(CFLAGS) $< $(LDFLAGS) 
 
 install: all
 	mkdir -p $(PREFIX)/bin
