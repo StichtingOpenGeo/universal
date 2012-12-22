@@ -59,4 +59,10 @@ int main (int argc, char *argv[]) {
             zmq_msg_close (&part);
         } while (more);
     }
+
+    zmq_close (receiver);
+
+    zmq_close (pubsub);
+
+    zmq_ctx_destroy (context);
 }
