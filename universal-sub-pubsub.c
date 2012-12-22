@@ -63,7 +63,7 @@ init:
     int rc;
 
     /* Ensure that every 60s there is data */
-    while ((rc = zmq_poll (items, 1, 60000)) >= 0) {
+    while ((rc = zmq_poll (items, 1, 60000000L)) >= 0) {
         if (rc > 0) {
             #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
             int more;
