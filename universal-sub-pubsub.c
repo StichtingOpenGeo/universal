@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <zmq.h>
+#include "zmq.h"
 
 int main (int argc, char *argv[]) {
     if (argc < 3) {
@@ -32,12 +32,8 @@ int main (int argc, char *argv[]) {
 
     /* Apply a high water mark at the PubSub */
     uint64_t hwm   = 255;
-    #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
     zmq_setsockopt (pubsub, ZMQ_SNDHWM, &hwm, sizeof(hwm));
     zmq_setsockopt (pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
-    #else
-    zmq_setsockopt (pubsub, ZMQ_HWM, &hwm, sizeof(hwm));
-    #endif
 
     zmq_bind (pubsub, argv[argc - 1]);
 
@@ -61,16 +57,12 @@ init:
     zmq_connect (items[0].socket, argv[1]);
 
     int rc;
+    size_t more_size = sizeof(more_t);
 
     /* Ensure that every 60s there is data */
-    while ((rc = zmq_poll (items, 1, 60000000L)) >= 0) {
+    while ((rc = zmq_poll (items, 1, 60 * 1000 * ZMQ_POLL_MSEC)) >= 0) {
         if (rc > 0) {
-            #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
-            int more;
-            #else
-            int64_t more;
-            #endif
-            size_t more_size = sizeof more;
+            more_t more;
             do {
                 /* Create an empty 0MQ message to hold the message part */
                 zmq_msg_t part;
@@ -78,11 +70,7 @@ init:
                 assert (rc == 0);
 
                 /* Block until a message is available to be received from the socket */
-                #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
                 rc = zmq_msg_recv (&part, items[0].socket, 0);
-                #else
-                rc = zmq_recv (items[0].socket, &part, 0);
-                #endif
                 assert (rc != -1);
 
                 /* Determine if more message parts are to follow */
@@ -90,11 +78,7 @@ init:
                 assert (rc == 0);
 
                 /* Send the message, when more is set, apply the flag, otherwise don't */
-                #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
                 zmq_msg_send (&part, pubsub, (more ? ZMQ_SNDMORE : 0));
-                #else
-                zmq_send (pubsub, &part, (more ? ZMQ_SNDMORE : 0));
-                #endif
 
                 zmq_msg_close (&part);
             } while (more);
@@ -108,11 +92,7 @@ init:
 
     zmq_close (pubsub);
 
-    #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
     zmq_ctx_destroy (context);
-    #else
-    zmq_term (context);
-    #endif
 
     return rc;
 }
