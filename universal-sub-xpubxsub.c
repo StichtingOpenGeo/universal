@@ -59,7 +59,7 @@ init:
     int rc;
 
     /* Ensure that every 60s there is data */
-    while ((rc = zmq_poll (items, 1, 60000000L)) >= 0) {
+    while ((rc = zmq_poll (items, 1, 60 * 1000L)) >= 0) {
         if (rc > 0) {
             int more;
             size_t more_size = sizeof more;
