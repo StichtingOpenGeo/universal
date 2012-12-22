@@ -57,12 +57,12 @@ init:
     zmq_connect (items[0].socket, argv[1]);
 
     int rc;
+    size_t more_size = sizeof(int);
 
     /* Ensure that every 60s there is data */
     while ((rc = zmq_poll (items, 1, 60 * 1000L)) >= 0) {
         if (rc > 0) {
             int more;
-            size_t more_size = sizeof more;
             do {
                 /* Create an empty 0MQ message to hold the message part */
                 zmq_msg_t part;
