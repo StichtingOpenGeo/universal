@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <zmq.h>
+#include "zmq.h"
 
 int main (int argc, char *argv[]) {
     if (argc != 3) {
@@ -30,23 +30,16 @@ int main (int argc, char *argv[]) {
 
     /* Apply a high water mark at the PubSub */
     uint64_t hwm   = 255;
-    #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
     zmq_setsockopt(pubsub, ZMQ_SNDHWM, &hwm, sizeof(hwm));
     zmq_setsockopt(pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
-    #else
-    zmq_setsockopt(pubsub, ZMQ_HWM, &hwm, sizeof(hwm));
-    #endif
 
     zmq_bind (pubsub,   argv[2]);
     zmq_bind (receiver, argv[1]);
 
+    size_t more_size = sizeof(more_t);
+
     while (1) {
-        #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
-        int more;
-        #else
-        int64_t more;
-        #endif
-        size_t more_size = sizeof more;
+        more_t more;
         do {
             /* Create an empty 0MQ message to hold the message part */
             zmq_msg_t part;
@@ -54,11 +47,7 @@ int main (int argc, char *argv[]) {
             assert (rc == 0);
 
             /* Block until a message is available to be received from the socket */
-	    #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
-	    rc = zmq_msg_recv (&part, receiver, 0);
-	    #else
-            rc = zmq_recv (receiver, &part, 0);
-	    #endif
+            rc = zmq_msg_recv (&part, receiver, 0);
             assert (rc != -1);
 
             /* Determine if more message parts are to follow */
@@ -66,13 +55,15 @@ int main (int argc, char *argv[]) {
             assert (rc == 0);
 
             /* Send the message, when more is set, apply the flag, otherwise don't */
-	    #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(3,0,0)
-	    zmq_msg_send (&part, pubsub, (more ? ZMQ_SNDMORE : 0));
-	    #else
-            zmq_send (pubsub, &part, (more ? ZMQ_SNDMORE : 0));
-	    #endif
+            zmq_msg_send (&part, pubsub, (more ? ZMQ_SNDMORE : 0));
 
             zmq_msg_close (&part);
         } while (more);
     }
+
+    zmq_close (receiver);
+
+    zmq_close (pubsub);
+
+    zmq_ctx_destroy (context);
 }

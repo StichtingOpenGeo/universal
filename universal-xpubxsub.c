@@ -36,9 +36,10 @@ int main (int argc, char *argv[]) {
     zmq_bind (pubsub,   argv[2]);
     zmq_bind (receiver, argv[1]);
 
+    size_t more_size = sizeof(int);
+
     while (1) {
         int more;
-        size_t more_size = sizeof more;
         do {
             /* Create an empty 0MQ message to hold the message part */
             zmq_msg_t part;
@@ -59,4 +60,10 @@ int main (int argc, char *argv[]) {
             zmq_msg_close (&part);
         } while (more);
     }
+
+    zmq_close (receiver);
+
+    zmq_close (pubsub);
+
+    zmq_ctx_destroy (context);
 }

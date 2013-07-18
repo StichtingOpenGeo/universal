@@ -29,47 +29,70 @@ int main (int argc, char *argv[]) {
 
     void *context  = zmq_init (1);
     void *pubsub   = zmq_socket (context, ZMQ_XPUB);
-    void *subscriber = zmq_socket (context, ZMQ_SUB);
-
-    unsigned int i;
-
-    /* Apply filters to the PubSub */
-    for (i = 2; i < (argc - 1); i++) {
-        zmq_setsockopt(pubsub, ZMQ_SUBSCRIBE, argv[i], strlen(argv[i]));
-    }
 
     /* Apply a high water mark at the PubSub */
     uint64_t hwm   = 255;
-    zmq_setsockopt(pubsub, ZMQ_SNDHWM, &hwm, sizeof(hwm));
-    zmq_setsockopt(pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
+    zmq_setsockopt (pubsub, ZMQ_SNDHWM, &hwm, sizeof(hwm));
+    zmq_setsockopt (pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
 
     zmq_bind (pubsub, argv[argc - 1]);
-    zmq_connect (subscriber, argv[1]);
 
-    /* Apply the subscriptions */
-    zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, "", 0);
+    zmq_pollitem_t items[1];
 
-    while (1) {
-        int more;
-        size_t more_size = sizeof more;
-        do {
-            /* Create an empty 0MQ message to hold the message part */
-            zmq_msg_t part;
-            int rc = zmq_msg_init (&part);
-            assert (rc == 0);
+init:
+    items[0].socket = zmq_socket (context, ZMQ_SUB);
+    items[0].events = ZMQ_POLLIN;
 
-            /* Block until a message is available to be received from the socket */
-            rc = zmq_msg_recv (&part, subscriber, 0);
-            assert (rc != -1);
+    /* Apply filters to the subscription from the remote source */
+    if (argc > 3) {
+        unsigned int i;
 
-            /* Determine if more message parts are to follow */
-            rc = zmq_getsockopt (subscriber, ZMQ_RCVMORE, &more, &more_size);
-            assert (rc == 0);
-
-            /* Send the message, when more is set, apply the flag, otherwise don't */
-            zmq_msg_send (&part, pubsub, (more ? ZMQ_SNDMORE : 0));
-
-            zmq_msg_close (&part);
-        } while (more);
+        for (i = 2; i < (argc - 1); i++) {
+            zmq_setsockopt(items[0].socket, ZMQ_SUBSCRIBE, argv[i], strlen(argv[i]));
+        }
+    } else {
+        zmq_setsockopt(items[0].socket, ZMQ_SUBSCRIBE, "", 0);
     }
+
+    zmq_connect (items[0].socket, argv[1]);
+
+    int rc;
+    size_t more_size = sizeof(int);
+
+    /* Ensure that every 60s there is data */
+    while ((rc = zmq_poll (items, 1, 60 * 1000L)) >= 0) {
+        if (rc > 0) {
+            int more;
+            do {
+                /* Create an empty 0MQ message to hold the message part */
+                zmq_msg_t part;
+                rc = zmq_msg_init (&part);
+                assert (rc == 0);
+
+                /* Block until a message is available to be received from the socket */
+                rc = zmq_msg_recv (&part, items[0].socket, 0);
+                assert (rc != -1);
+
+                /* Determine if more message parts are to follow */
+                rc = zmq_getsockopt (items[0].socket, ZMQ_RCVMORE, &more, &more_size);
+                assert (rc == 0);
+
+                /* Send the message, when more is set, apply the flag, otherwise don't */
+                zmq_msg_send (&part, pubsub, (more ? ZMQ_SNDMORE : 0));
+
+                zmq_msg_close (&part);
+            } while (more);
+        } else {
+            zmq_close (items[0].socket);
+            goto init;
+        }
+    }
+
+    zmq_close (items[0].socket);
+
+    zmq_close (pubsub);
+
+    zmq_ctx_destroy (context);
+
+    return 0;
 }
