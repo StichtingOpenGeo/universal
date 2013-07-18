@@ -1,4 +1,4 @@
-PREFIX=/opt/loket
+PREFIX=/opt/universal
 CC = gcc
 CFLAGS=-Wall -O0 -ggdb -I$(PREFIX)/include
 LDFLAGS=-L$(PREFIX)/lib -Wl,-rpath,$(PREFIX)/lib -lzmq
@@ -19,6 +19,9 @@ universal-xpubxsub: universal-xpubxsub.c
 	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@
 
 universal-sub-xpubxsub: universal-sub-xpubxsub.c
+	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@
+
+kv78-dump: kv78-dump.c
 	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@
 
 install: all
