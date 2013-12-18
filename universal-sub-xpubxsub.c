@@ -31,7 +31,7 @@ int main (int argc, char *argv[]) {
     void *pubsub   = zmq_socket (context, ZMQ_XPUB);
 
     /* Apply a high water mark at the PubSub */
-    uint64_t hwm   = 255;
+    uint64_t hwm   = 8192;
     zmq_setsockopt (pubsub, ZMQ_SNDHWM, &hwm, sizeof(hwm));
     zmq_setsockopt (pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
 
