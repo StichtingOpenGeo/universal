@@ -1,6 +1,6 @@
 /* This software is the client component of the ND-OV system.
  * Each multipart message it receives from the ND-OV system
- * consisting of an envelope and its data is rebroadcasted 
+ * consisting of an envelope and its data is rebroadcasted
  * to all connected clients of the serviceprovider.
  *
  * Requirements: zeromq2 or zeromq3.2
@@ -8,7 +8,7 @@
  *
  * Changes:
  *  - Initial version <stefan@opengeo.nl>
- *  - zeromq 3.2 compatibility added, 
+ *  - zeromq 3.2 compatibility added,
  *    pubsub binding bugfix  <p.r.fokkinga@rug.nl>
  */
 
@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <unistd.h>
 #include "zmq.h"
 
 int main (int argc, char *argv[]) {
@@ -42,7 +43,7 @@ int main (int argc, char *argv[]) {
 init:
     items[0].socket = zmq_socket (context, ZMQ_SUB);
     items[0].events = ZMQ_POLLIN;
-    
+
     /* Apply filters to the subscription from the remote source */
     if (argc > 3) {
         unsigned int i;
@@ -84,6 +85,7 @@ init:
             } while (more);
         } else {
             zmq_close (items[0].socket);
+            sleep (1);
             goto init;
         }
     }

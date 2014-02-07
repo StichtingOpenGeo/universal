@@ -1,6 +1,6 @@
 /* This software is the client component of the ND-OV system.
  * Each multipart message it receives from the ND-OV system
- * consisting of an envelope and its data is rebroadcasted 
+ * consisting of an envelope and its data is rebroadcasted
  * to all connected clients of the serviceprovider.
  *
  * Requirements: zeromq3.2
@@ -8,7 +8,7 @@
  *
  * Changes:
  *  - Initial version <stefan@opengeo.nl>
- *  - zeromq 3.2 compatibility added, 
+ *  - zeromq 3.2 compatibility added,
  *    pubsub binding bugfix  <p.r.fokkinga@rug.nl>
  */
 
@@ -18,6 +18,7 @@
 #include <string.h>
 #include <assert.h>
 #include <zmq.h>
+#include <unistd.h>
 
 int main (int argc, char *argv[]) {
     if (argc < 3) {
@@ -84,6 +85,7 @@ init:
             } while (more);
         } else {
             zmq_close (items[0].socket);
+            sleep (1);
             goto init;
         }
     }
