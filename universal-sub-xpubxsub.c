@@ -12,6 +12,7 @@
  *    pubsub binding bugfix  <p.r.fokkinga@rug.nl>
  */
 
+#include <pwd.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -19,14 +20,43 @@
 #include <assert.h>
 #include <zmq.h>
 #include <unistd.h>
+#include <errno.h>
+#include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 
 int main (int argc, char *argv[]) {
+    /* Our process ID and Session ID */
+    pid_t pid, sid;
+
     if (argc < 3) {
         printf("%s [subscriber] (filter1 filter2 filterN) [pubsub]\n\nEx.\n" \
                 "%s tcp://127.0.0.1:7817 tcp://127.0.0.1:7827\n",
                 argv[0], argv[0]);
         exit(-1);
     }
+
+    /* Fork off the parent process */
+    pid = fork();
+
+    /* If we got a good PID, then we can exit the parent process. */
+    if (pid > 0) {
+        exit(EXIT_SUCCESS);
+    }
+
+    /* If forking actually didn't work */
+    if (pid < 0) {
+        /* Create a new SID for the child process */
+        sid = setsid();
+
+        /* Close out the standard file descriptors */
+        close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+    }
+
+    chdir("/var/empty");
 
     void *context  = zmq_init (1);
     void *pubsub   = zmq_socket (context, ZMQ_XPUB);
@@ -37,6 +67,20 @@ int main (int argc, char *argv[]) {
     zmq_setsockopt (pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
 
     zmq_bind (pubsub, argv[argc - 1]);
+
+    /* Check if we are root */
+    if (getuid() == 0  || geteuid() == 0) {
+        struct passwd *pw;
+        uid_t puid = 65534; /* just use the traditional value */
+        gid_t pgid = 65534;
+
+        /* Now we chroot to this directory, preventing any write access outside it */
+        chroot("/var/empty");
+
+        /* After we bind to the socket and chrooted, we drop priviledges to nobody */
+        setuid(puid);
+        setgid(pgid);
+    }
 
     zmq_pollitem_t items[1];
 

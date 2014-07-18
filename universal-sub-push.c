@@ -21,12 +21,33 @@
 #include "zmq.h"
 
 int main (int argc, char *argv[]) {
+    /* Our process ID and Session ID */
+    pid_t pid;
+
     if (argc < 3) {
         printf("%s [subscriber] (filter1 filter2 filterN) [pull]\n\nEx.\n" \
                 "%s tcp://127.0.0.1:7827 tcp://127.0.0.1:7817\n",
                 argv[0], argv[0]);
         exit(-1);
     }
+
+    /* Fork off the parent process */
+    pid = fork();
+
+    /* If we got a good PID, then we can exit the parent process. */
+    if (pid > 0) {
+        exit(EXIT_SUCCESS);
+    }
+
+    /* If forking actually didn't work */
+    if (pid < 0) {
+        /* Close out the standard file descriptors */
+        close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+    }
+
+    chdir("/var/empty");
 
     void *context  = zmq_init (1);
     void *push     = zmq_socket (context, ZMQ_PUSH);
@@ -35,6 +56,19 @@ int main (int argc, char *argv[]) {
     uint64_t hwm   = 8192;
     zmq_setsockopt (push, ZMQ_SNDHWM, &hwm, sizeof(hwm));
     zmq_setsockopt (push, ZMQ_RCVHWM, &hwm, sizeof(hwm));
+
+    /* Check if we are root */
+    if (getuid() == 0  || geteuid() == 0) {
+        uid_t puid = 65534; /* just use the traditional value */
+        gid_t pgid = 65534;
+
+        /* Now we chroot to this directory, preventing any write access outside it */
+        chroot("/var/empty");
+
+        /* After we bind to the socket and chrooted, we drop priviledges to nobody */
+        setuid(puid);
+        setgid(pgid);
+    }
 
     zmq_connect (push, argv[argc - 1]);
 

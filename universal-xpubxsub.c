@@ -10,13 +10,23 @@
  *  - Initial version <stefan@opengeo.nl>
  */
 
+#include <pwd.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <zmq.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 int main (int argc, char *argv[]) {
+    /* Our process ID and Session ID */
+    pid_t pid;
+
     if (argc != 3) {
         printf("%s [receiver] [pubsub]\n\nEx.\n" \
                 "%s tcp://127.0.0.1:7807 tcp://127.0.0.1:7817\n",
@@ -24,18 +34,49 @@ int main (int argc, char *argv[]) {
         exit(-1);
     }
 
+    /* Fork off the parent process */
+    pid = fork();
+
+    /* If we got a good PID, then we can exit the parent process. */
+    if (pid > 0) {
+        exit(EXIT_SUCCESS);
+    }
+
+    /* If forking actually didn't work */
+    if (pid < 0) {
+        /* Close out the standard file descriptors */
+        close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+    }
+
+    chdir("/var/empty");
+
     void *context  = zmq_init (1);
     void *pubsub   = zmq_socket (context, ZMQ_XPUB);
     void *receiver = zmq_socket (context, ZMQ_PULL);
 
     /* Apply a high water mark at the PubSub */
     uint64_t hwm   = 8192;
-    zmq_setsockopt(pubsub, ZMQ_SNDHWM, &hwm, sizeof(hwm));
-    zmq_setsockopt(pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
+    zmq_setsockopt (pubsub, ZMQ_SNDHWM, &hwm, sizeof(hwm));
+    zmq_setsockopt (pubsub, ZMQ_RCVHWM, &hwm, sizeof(hwm));
 
-    zmq_bind (pubsub,   argv[2]);
+    zmq_bind (pubsub, argv[argc - 1]);
     zmq_bind (receiver, argv[1]);
 
+    /* Check if we are root */
+    if (getuid() == 0  || geteuid() == 0) {
+        uid_t puid = 65534; /* just use the traditional value */
+        gid_t pgid = 65534;
+
+        /* Now we chroot to this directory, preventing any write access outside it */
+        chroot("/var/empty");
+
+        /* After we bind to the socket and chrooted, we drop priviledges to nobody */
+        setuid(puid);
+        setgid(pgid);
+    }
+    
     size_t more_size = sizeof(int);
 
     while (1) {
