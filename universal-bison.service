@@ -1,0 +1,11 @@
+[Unit]
+Description=Universal BISON
+After=syslog.target network.target
+
+[Service]
+User=universal
+Restart=always
+ExecStart=/opt/universal/bin/universal-sub-xpubxsub tcp://pubsub.ndovloket.nl:7658 tcp://0.0.0.0:7658
+
+[Install]
+WantedBy=multi-user.target
